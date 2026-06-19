@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: Georgia, "Times New Roman", serif;
+}
+
+html,
+body {
+  height: 100%;
+  background-color: #ffffff;
+  color: #171717;
+}
+
+/* Thin, unobtrusive horizontal scrollbar for the gallery */
+main::-webkit-scrollbar {
+  height: 6px;
+}
+main::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 9999px;
+}
