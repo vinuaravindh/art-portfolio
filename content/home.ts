@@ -25,9 +25,12 @@ export type Block =
       type: "image";
       src: string;
       alt: string;
-      // "sm" | "md" | "lg" controls how wide the panel is. Default "md".
-      size?: "sm" | "md" | "lg";
+      width: number;
+      height: number;
+      size?: "sm" | "md" | "lg" | "edge";
       caption?: string;
+      hoverTitle?: string;
+      hoverDescription?: string;
     }
   | {
       type: "text";
@@ -48,7 +51,11 @@ export const homeBlocks: Block[] = [
     type: "image",
     src: "/images/lily-pond.svg",
     alt: "Painting of a figure resting in a lily pond, framed in wood",
+    width: 1146,
+    height: 505,
     size: "lg",
+    hoverTitle: "Lilly Pond and Vallam",
+    hoverDescription: "Traditional Kerala Lilly Pond 3D installation art work made with texture, resin and sculpture.\nDimensions – 5.10 ft x 3ft\nTeakwood Frame\nRs. 45,000/-",
   },
   {
     type: "text",
@@ -60,7 +67,11 @@ export const homeBlocks: Block[] = [
     type: "image",
     src: "/images/flowers.svg",
     alt: "Floral mixed-medium painting in pinks and greens",
+    width: 489,
+    height: 686,
     size: "md",
+    hoverTitle: "Floral",
+    hoverDescription: "3D installation art work made with heavy impasto, texture paste, and sculpture techniques.\nDimensions – 3 ft x 4ft\nRs. 35,000/-",
   },
   {
     type: "text",
@@ -73,12 +84,18 @@ export const homeBlocks: Block[] = [
     type: "image",
     src: "/images/green-texture.svg",
     alt: "Heavily textured painting in layered greens",
+    width: 870,
+    height: 546,
     size: "md",
+    hoverTitle: "Emerald Topography",
+    hoverDescription: "Abstract landscape art work created with a heavy texture medium, modeling compound, and impasto paint techniques\nDimensions – 5 ft x 3ft\nRs. 30,000/-",
   },
   {
     type: "image",
     src: "/images/lily-pad.svg",
     alt: "Painting of koi and water lilies on a blue pond",
+    width: 469,
+    height: 469,
     size: "sm",
   },
   {
@@ -94,6 +111,8 @@ export const homeBlocks: Block[] = [
     type: "image",
     src: "/images/edge-strip.svg",
     alt: "Detail of leaf-like brushstrokes in warm tones",
-    size: "sm",
+    width: 853,
+    height: 1024,
+    size: "edge",
   },
 ];

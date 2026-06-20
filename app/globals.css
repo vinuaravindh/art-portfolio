@@ -1,13 +1,9 @@
 @import "tailwindcss";
 
-@theme {
-  --font-serif: Georgia, "Times New Roman", serif;
-}
-
 html,
 body {
   height: 100%;
-  background-color: #ffffff;
+  background-color: #F5F0E8;
   color: #171717;
 }
 
@@ -16,6 +12,18 @@ main::-webkit-scrollbar {
   height: 6px;
 }
 main::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.15);
+  background-color: rgba(120, 100, 80, 0.2);
   border-radius: 9999px;
+}
+
+/* Gentle rightward nudge for the "swipe" hint on the mobile homepage */
+@keyframes swipe-nudge {
+  0%, 100% { transform: translateX(0); opacity: 0.55; }
+  50% { transform: translateX(6px); opacity: 1; }
+}
+.swipe-hint {
+  animation: swipe-nudge 1.8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .swipe-hint { animation: none; }
 }
