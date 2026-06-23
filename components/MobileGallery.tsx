@@ -179,17 +179,6 @@ export function MobileGallery({ blocks }: { blocks: Block[] }) {
     return closest;
   }, []);
 
-  // Smoothly center a specific panel.
-  const scrollToIndex = useCallback((i: number) => {
-    const main = mainRef.current;
-    const section = sectionRefs.current[i];
-    if (!main || !section) return;
-    main.scrollTo({
-      left: section.offsetLeft + section.offsetWidth / 2 - main.clientWidth / 2,
-      behavior: "smooth",
-    });
-  }, []);
-
   // One deliberate swipe = exactly one slide. We fully own the gesture (no
   // native momentum, so a light flick can't coast to the end). Either axis
   // navigates: finger LEFT or finger UP → next slide; RIGHT or DOWN → previous.
@@ -210,12 +199,45 @@ export function MobileGallery({ blocks }: { blocks: Block[] }) {
     let startScroll = 0;
     let startIndex = 0;
     let axis: "h" | "v" | null = null;
-    let restoreTimer: number | undefined;
+    let raf = 0;
 
     const lastIndex = () => sectionRefs.current.length - 1;
     const clamp = (i: number) => Math.max(0, Math.min(lastIndex(), i));
 
+    const leftForIndex = (i: number) => {
+      const section = sectionRefs.current[i];
+      return section
+        ? section.offsetLeft + section.offsetWidth / 2 - main.clientWidth / 2
+        : main.scrollLeft;
+    };
+
+    // Ease-OUT glide to a panel: starts fast (carrying the swipe's momentum)
+    // and decelerates in, so the release feels continuous with the drag rather
+    // than pausing and then snapping. Duration scales with the distance left to
+    // cover so short hops are quick and long ones don't feel sluggish.
+    const animateToIndex = (i: number) => {
+      cancelAnimationFrame(raf);
+      const from = main.scrollLeft;
+      const to = leftForIndex(i);
+      const delta = to - from;
+      if (Math.abs(delta) < 1) {
+        main.scrollLeft = to;
+        return;
+      }
+      const duration = Math.min(420, Math.max(160, Math.abs(delta) * 0.7));
+      const t0 = performance.now();
+      const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+      const tick = (now: number) => {
+        const t = Math.min(1, (now - t0) / duration);
+        main.scrollLeft = from + delta * easeOut(t);
+        if (t < 1) raf = requestAnimationFrame(tick);
+        else main.scrollLeft = to;
+      };
+      raf = requestAnimationFrame(tick);
+    };
+
     const onTouchStart = (e: TouchEvent) => {
+      cancelAnimationFrame(raf); // interrupt any in-flight glide
       const t = e.touches[0];
       startX = lastX = t.clientX;
       startY = lastY = t.clientY;
@@ -223,8 +245,6 @@ export function MobileGallery({ blocks }: { blocks: Block[] }) {
       startScroll = main.scrollLeft;
       startIndex = indexAtScroll(startScroll);
       axis = null;
-      window.clearTimeout(restoreTimer);
-      main.style.scrollSnapType = "none"; // we drive scrollLeft while dragging
     };
 
     const onTouchMove = (e: TouchEvent) => {
@@ -244,20 +264,15 @@ export function MobileGallery({ blocks }: { blocks: Block[] }) {
     };
 
     const onTouchEnd = () => {
-      if (axis !== null) {
-        const elapsed = Math.max(1, Date.now() - startTime);
-        // Positive = toward the next slide (finger moved left or up).
-        const dist = axis === "v" ? startY - lastY : startX - lastX;
-        const velocity = dist / elapsed;
-        let target = startIndex;
-        if (dist > DIST || velocity > VELOCITY) target = startIndex + 1;
-        else if (dist < -DIST || velocity < -VELOCITY) target = startIndex - 1;
-        scrollToIndex(clamp(target));
-      }
-      // Restore CSS snap once the smooth scroll has settled.
-      restoreTimer = window.setTimeout(() => {
-        main.style.scrollSnapType = "";
-      }, 450);
+      if (axis === null) return; // a tap — leave it where it is
+      const elapsed = Math.max(1, Date.now() - startTime);
+      // Positive = toward the next slide (finger moved left or up).
+      const dist = axis === "v" ? startY - lastY : startX - lastX;
+      const velocity = dist / elapsed;
+      let target = startIndex;
+      if (dist > DIST || velocity > VELOCITY) target = startIndex + 1;
+      else if (dist < -DIST || velocity < -VELOCITY) target = startIndex - 1;
+      animateToIndex(clamp(target));
       axis = null;
     };
 
@@ -273,7 +288,7 @@ export function MobileGallery({ blocks }: { blocks: Block[] }) {
       wheelAccum += e.deltaY;
       if (Math.abs(wheelAccum) > 30) {
         const dir = wheelAccum > 0 ? 1 : -1;
-        scrollToIndex(clamp(indexAtScroll(main.scrollLeft) + dir));
+        animateToIndex(clamp(indexAtScroll(main.scrollLeft) + dir));
         wheelAccum = 0;
         wheelLocked = true;
         window.clearTimeout(wheelReset);
@@ -292,10 +307,10 @@ export function MobileGallery({ blocks }: { blocks: Block[] }) {
       main.removeEventListener("touchmove", onTouchMove);
       main.removeEventListener("touchend", onTouchEnd);
       main.removeEventListener("wheel", onWheel);
-      window.clearTimeout(restoreTimer);
+      cancelAnimationFrame(raf);
       window.clearTimeout(wheelReset);
     };
-  }, [indexAtScroll, scrollToIndex]);
+  }, [indexAtScroll]);
 
   // Toggle the sticky header once the intro panel scrolls out of view
   useEffect(() => {
@@ -335,7 +350,7 @@ export function MobileGallery({ blocks }: { blocks: Block[] }) {
 
       <main
         ref={mainRef}
-        className="flex h-[100dvh] snap-x snap-mandatory items-stretch gap-3 overflow-x-auto overflow-y-hidden [touch-action:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex h-[100dvh] items-stretch gap-3 overflow-x-auto overflow-y-hidden [touch-action:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         aria-label="Painting gallery"
       >
         {blocks.map((block, index) => (
