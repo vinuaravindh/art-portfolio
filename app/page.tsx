@@ -1,6 +1,8 @@
 import { Gallery } from "@/components/Gallery";
-import { homeBlocks } from "@/content/home";
+import { getHomeBlocks } from "@/sanity/lib/queries";
 
-export default function HomePage() {
-  return <Gallery blocks={homeBlocks} />;
+export default async function HomePage() {
+  // Pulls from Sanity when configured, otherwise falls back to content/home.ts.
+  const blocks = await getHomeBlocks();
+  return <Gallery blocks={blocks} />;
 }
